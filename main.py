@@ -289,8 +289,8 @@ class TMDBPosterGenerator:
             # Create a copy of cached posters for this thread
             posters = [poster.copy() if poster else None for poster in self.cached_posters]
         
-        # Create the grid canvas
-        grid_canvas = Image.new('RGB', (expanded_width, expanded_height), (20, 20, 20))
+        # Create the grid canvas with black background
+        grid_canvas = Image.new('RGB', (expanded_width, expanded_height), (0, 0, 0))
         
         # Fill the entire canvas with posters, repeating if necessary
         poster_index = 0
@@ -319,16 +319,12 @@ class TMDBPosterGenerator:
                     poster_index += 1
                     continue
                 
-                # Add subtle shadow for depth
-                shadow = Image.new('RGBA', (poster_width + 4, poster_height + 4), (0, 0, 0, 60))
-                grid_canvas.paste(shadow, (x + 2, y + 2), shadow)
-                
-                # Paste the poster
+                # Paste the poster directly without shadow
                 grid_canvas.paste(resized_poster, (x, y))
                 poster_index += 1
         
         # Rotate the entire grid
-        rotated_grid = grid_canvas.rotate(angle, expand=True, fillcolor=(20, 20, 20), resample=Image.BICUBIC)
+        rotated_grid = grid_canvas.rotate(angle, expand=True, fillcolor=(0, 0, 0), resample=Image.BICUBIC)
         
         # Calculate center crop to get final dimensions
         rotated_width, rotated_height = rotated_grid.size
@@ -343,25 +339,7 @@ class TMDBPosterGenerator:
             crop_y + height
         ))
         
-        # Add subtle vignette effect
-        vignette = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(vignette)
-        
-        # Create softer gradient edges
-        edge_size = min(width, height) // 10
-        for i in range(edge_size):
-            alpha = int(120 * (i / edge_size) * 0.5)
-            # Top edge
-            draw.rectangle([(0, i), (width, i+1)], fill=(0, 0, 0, alpha))
-            # Bottom edge
-            draw.rectangle([(0, height-i-1), (width, height-i)], fill=(0, 0, 0, alpha))
-            # Left edge
-            draw.rectangle([(i, 0), (i+1, height)], fill=(0, 0, 0, alpha))
-            # Right edge
-            draw.rectangle([(width-i-1, 0), (width-i, height)], fill=(0, 0, 0, alpha))
-        
-        # Apply vignette
-        final_canvas = Image.alpha_composite(final_canvas.convert('RGBA'), vignette).convert('RGB')
+        # No vignette effect - keep clean poster grid
         
         # Only create temp directories if S3 is disabled (for local storage)
         if not self.s3_storage.enabled:
