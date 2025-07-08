@@ -1,0 +1,122 @@
+name: Generate Wallpapers
+
+on:
+  schedule:
+    # Run every 6 hours (at 00:00, 06:00, 12:00, 18:00 UTC)
+    - cron: '0 */6 * * *'
+  
+  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      force_regenerate:
+        description: 'Force regenerate all wallpapers'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read          # Read repository contents
+      issues: write          # Create issues on failure
+      actions: read          # Read workflow artifacts
+      id-token: write        # For OIDC token generation
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Generate wallpapers
+        env:
+          # TMDB Configuration
+          TMDB_API_KEY: ${{ vars.TMDB_API_KEY }}
+          
+          # S3 Configuration
+          S3_ENABLED: ${{ vars.S3_ENABLED }}
+          S3_ENDPOINT_URL: ${{ vars.S3_ENDPOINT_URL }}
+          S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_REGION: ${{ vars.S3_REGION }}
+          S3_PATH_PREFIX: ${{ vars.S3_PATH_PREFIX }}
+          S3_PUBLIC_READ: ${{ vars.S3_PUBLIC_READ }}
+          
+          # Manual trigger option
+          FORCE_REGENERATE: ${{ github.event.inputs.force_regenerate }}
+        run: |
+          echo "Starting wallpaper generation..."
+          echo "Trigger: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger - Force regenerate: ${{ github.event.inputs.force_regenerate }}"
+          fi
+          
+          # Run the poster generator
+          uv run python main.py
+
+      - name: Upload generation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generation-logs-${{ github.run_number }}
+          path: |
+            *.log
+            logs/
+          retention-days: 7
+
+      - name: Notify on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Wallpaper Generation Failed - Run #${{ github.run_number }}`,
+              body: `
+              ## Wallpaper Generation Failure
+              
+              **Run ID:** ${{ github.run_id }}
+              **Trigger:** ${{ github.event_name }}
+              **Time:** ${new Date().toISOString()}
+              
+              The automated wallpaper generation failed. Please check the workflow logs:
+              
+              [View Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              
+              **Possible causes:**
+              - TMDB API rate limits
+              - S3 storage connectivity issues
+              - Missing or invalid environment variables
+              - Network connectivity problems
+              
+              This issue was automatically created by the workflow.
+              `,
+              labels: ['automated', 'bug', 'wallpaper-generation']
+            });
+            
+            console.log(`Created issue #${issue.data.number}`);
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "✅ Wallpaper generation completed successfully!"
+          echo "Run details:"
+          echo "- Workflow: ${{ github.workflow }}"
+          echo "- Run ID: ${{ github.run_id }}"
+          echo "- Trigger: ${{ github.event_name }}"
+          echo "- Timestamp: $(date -u)"

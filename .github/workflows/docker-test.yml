@@ -16,6 +16,10 @@ jobs:
   test-build:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: read          # Read repository contents
+      actions: read          # Read workflow cache
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

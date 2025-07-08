@@ -20,9 +20,12 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    
     permissions:
-      contents: read
-      packages: write
+      contents: read          # Read repository contents
+      packages: write         # Push to GitHub Container Registry
+      attestations: write     # Generate build attestations
+      id-token: write        # For OIDC token generation
 
     steps:
       - name: Checkout repository

@@ -11,11 +11,12 @@ env:
 jobs:
   build-and-push-release:
     runs-on: ubuntu-latest
+    
     permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
+      contents: write         # Update release information
+      packages: write         # Push to GitHub Container Registry
+      attestations: write     # Generate build attestations
+      id-token: write        # For OIDC token generation
 
     steps:
       - name: Checkout repository
