@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  poster-generator:
+    build: .
+    container_name: tmdb-poster-generator
+    environment:
+      # TMDB Configuration
+      - TMDB_API_KEY=${TMDB_API_KEY}
+      
+      # S3/R2 Configuration
+      - S3_ENABLED=${S3_ENABLED:-false}
+      - S3_ENDPOINT_URL=${S3_ENDPOINT_URL}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID}
+      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY}
+      - S3_REGION=${S3_REGION:-auto}
+      - S3_PATH_PREFIX=${S3_PATH_PREFIX:-backgrounds}
+      - S3_PUBLIC_READ=${S3_PUBLIC_READ:-true}
+    
+    volumes:
+      # Only mount backgrounds directory if S3 is disabled (for local storage)
+      # Uncomment the next line if you want local file storage:
+      # - ./backgrounds:/app/backgrounds
+      
+      # Optional: Mount .env file instead of using environment variables
+      # - ./.env:/app/.env:ro
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Resource limits (optional)
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
