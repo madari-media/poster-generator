@@ -44,17 +44,17 @@ jobs:
       - name: Generate wallpapers
         env:
           # TMDB Configuration
-          TMDB_API_KEY: ${{ vars.TMDB_API_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
           
           # S3 Configuration
-          S3_ENABLED: ${{ vars.S3_ENABLED }}
-          S3_ENDPOINT_URL: ${{ vars.S3_ENDPOINT_URL }}
-          S3_BUCKET_NAME: ${{ vars.S3_BUCKET_NAME }}
+          S3_ENABLED: ${{ secrets.S3_ENABLED }}
+          S3_ENDPOINT_URL: ${{ secrets.S3_ENDPOINT_URL }}
+          S3_BUCKET_NAME: ${{ secrets.S3_BUCKET_NAME }}
           S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_REGION: ${{ vars.S3_REGION }}
-          S3_PATH_PREFIX: ${{ vars.S3_PATH_PREFIX }}
-          S3_PUBLIC_READ: ${{ vars.S3_PUBLIC_READ }}
+          S3_REGION: ${{ secrets.S3_REGION }}
+          S3_PATH_PREFIX: ${{ secrets.S3_PATH_PREFIX }}
+          S3_PUBLIC_READ: ${{ secrets.S3_PUBLIC_READ }}
           
           # Manual trigger option
           FORCE_REGENERATE: ${{ github.event.inputs.force_regenerate }}
