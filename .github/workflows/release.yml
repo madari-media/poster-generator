@@ -60,10 +60,13 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
+        if: ${{ steps.build.outputs.digest }}
+        uses: actions/attest@v2
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
           subject-digest: ${{ steps.build.outputs.digest }}
+          predicate-type: 'https://slsa.dev/provenance/v1'
+          predicate: '{}'
           push-to-registry: true
 
       - name: Update release with image info
